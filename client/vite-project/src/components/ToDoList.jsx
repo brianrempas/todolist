@@ -3,13 +3,15 @@ import React, { useState } from 'react';
 export default function ToDoList({ smth, toggleToDo, toggleDelete, toggleUpdate }) {
   const [inputValues, setInputValues] = useState(smth.map((item) => item.id));
   const [inputValuesDate, setInputValuesDate] = useState(smth.map((item) => item.id));
+  const [filteredItems, setFilteredItems] = useState([]);
+  const [filteredItemsCheck, setFilteredItemsCheck] = useState(false);
 
   function tester(edited, ori){
     if (edited === undefined) {
       return ori;
     } else {
       return edited;
-    }
+    } 
   }
 
   function testerDate(editedDate, ori){
@@ -32,9 +34,40 @@ export default function ToDoList({ smth, toggleToDo, toggleDelete, toggleUpdate 
     setInputValuesDate(newInputValuesDate);
   };
 
+
+  const handleInputChangeSearch = (e) => {
+    const searchQuery = e.target.value.toLowerCase();
+    if (searchQuery === '') {
+      setFilteredItemsCheck(false);
+      setFilteredItems([]); 
+    } else {
+      const filtered = smth.filter((item) =>
+        item.todo.toLowerCase().includes(searchQuery)
+      );
+      if (filtered.length === 0) {
+        setFilteredItemsCheck(true);
+      } else {
+        setFilteredItemsCheck(true);
+      }
+      setFilteredItems(filtered);
+    }
+  };
+  
+  
+
+
   return (
     <ul>
-      {smth.map((item, index) => (
+      <div style={{ display: 'flex', justifyContent: 'right', alignItems: 'center' }}>
+      <input style={{width: '130px', borderRadius: '20px'}} type='text' className='text' placeholder='Search...'
+
+      onChange={(e) => {
+        handleInputChangeSearch(e);
+      }}
+      
+      />
+      </div>
+      {(filteredItemsCheck === false ? smth : filteredItems).map((item, index) => (
         <div key={index} className='beta' style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div>
             <input
