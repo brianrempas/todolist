@@ -3,6 +3,9 @@ import './App.css';
 import { useNavigate } from 'react-router-dom';
 
 function SignupPage() {
+
+  // Agak gak yakin pake redux karena datanya simple
+  
   const history = useNavigate();
   const [formData, setFormData] = useState({
     name: '',
