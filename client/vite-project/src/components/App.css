@@ -24,6 +24,19 @@ body {
     transition: transform 0.3s, box-shadow 0.3s;
 }
 
+@media only screen and (max-width: 1300px) {
+    .all {
+        width: 60%;
+    }
+}
+
+@media only screen and (min-width: 1900px) {
+    .all {
+        width: 700px;
+    }
+}
+
+
 .eidt:focus {
     opacity: 1;
 }
@@ -97,7 +110,15 @@ ul {
 
 .remover {
     text-align: right;
-    margin-left: 30px;
+    padding: 7px 6px;
+    background-color: #3498db;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    font-size: 9px;
+    cursor: pointer;
+    margin: 2px;
+    transition: 0.2s;
 }
 @keyframes moveDown {
     0% {
@@ -110,7 +131,7 @@ ul {
     }
 }
 
-.beta {
+.beta, .remover {
     animation: moveDown 0.5s ease-in-out 0.1s both;
 }
 button {
@@ -150,3 +171,8 @@ button:hover {
 .attention {
     color: red;
 }
+
+#attention {
+    color: #2c9dbf;
+}
+
