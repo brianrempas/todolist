@@ -4,6 +4,8 @@ import { useNavigate } from 'react-router-dom'
 
 function LoginPage() {
 
+  // Agak gak yakin pake redux karena datanya simple
+  
   const history = useNavigate();
   const [formData, setFormData] = useState({
     username: '',
