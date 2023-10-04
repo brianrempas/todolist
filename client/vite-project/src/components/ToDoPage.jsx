@@ -1,28 +1,33 @@
-import React, { useState, useRef, useEffect  } from 'react';
+import React, { useEffect  } from 'react';
+import { useSelector, useDispatch } from 'react-redux'
+import { setList, setUserData, setInputValue, setInputValueDate, setInputValueSearch } from './redux/counterSlice'
 import ToDoList from './ToDoList';
 import './App.css'
 import { useNavigate } from 'react-router-dom'
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css"/>
 
 function ToDoPage() {
-
+    var attention = document.getElementById('attention');
     const history = useNavigate();
-
-    const [List, setList] = useState([])
-    const [UserData, setUserData] = useState({id: 0, name: '', password: '', username: ''})
-    const [InputValue, setInputValue] = useState('')
-    const [InputValueDate, c] = useState('')
-    const todoNameRef = useRef();
-    const todoDateRef = useRef();
-
+    const List = useSelector((state) => state.counter.List);
+    const UserData = useSelector((state) => state.counter.UserData);
+    const InputValue = useSelector((state) => state.counter.InputValue);
+    const InputValueDate = useSelector((state) => state.counter.InputValueDate);
+    const InputValueSearch = useSelector((state) => state.counter.InputValueSearch);
+    const dispatch = useDispatch();
+    
     useEffect(() => {
       fetchToDoList();
     }, []);
 
     function setInput(e) {
-      return setInputValue(e.target.value)
+      dispatch(setInputValue(e.target.value))
     }
     function setInputDate(e) {
-      c(e.target.value);
+      dispatch(setInputValueDate(e.target.value))
+    }
+    function setInputSearch(e) {
+      dispatch(setInputValueSearch(e.target.value))
     }
 
     
@@ -56,9 +61,9 @@ function ToDoPage() {
       .then((data) => {
         const todoData = data[0].todoData;
         const userData = data[1].userData[0];
-        setUserData({id: userData.id, name: userData.name, password: userData.password, username: userData.username})
-        console.log(data)
+        dispatch(setUserData({id: userData.id, name: userData.name, username: userData.username}))
         title.textContent = 'Hello, ' + userData.name;
+        const newTodoList = []; 
 
         for(var i = 0; i < todoData.length; i++){
           const newTodo = {
@@ -68,8 +73,10 @@ function ToDoPage() {
             complete: todoData[i].complete,
           };
           //setList([...List, newTodo]);
-          List.push(newTodo)
+          newTodoList.push(newTodo)
         }
+        dispatch( setList(newTodoList) )
+        
       })
       .catch((error) => {
         console.log(error)
@@ -78,8 +85,8 @@ function ToDoPage() {
 
     function handleAddList(e) {
       e.preventDefault();
-      const name = todoNameRef.current.value;
-      const deadline = todoDateRef.current.value;
+      const name = InputValue;
+      const deadline = InputValueDate;
   
       if (name === '' || deadline === '') {} 
       
@@ -115,34 +122,43 @@ function ToDoPage() {
             if(data === undefined){
             } else {
               console.log('Task created successfully', data);
-              setList([...List, data.todo]);
-              setInputValue('');
+              dispatch(setList(
+                [...List, {
+                id: data.todo.id,
+                todo: data.todo.todo,
+                deadline: data.todo.deadline,
+                complete: data.todo.complete
+                }]
+              ))
+              dispatch(setInputValue(''))
+              dispatch(setInputValueDate(''))
+              attention.textContent = 'Task created successfully'
             }
           })
           .catch((error) => {
             console.error('Error:', error);
+            attention.textContent = 'Error'
           });
       }
     }
   
     const handleCheckboxChange = (id) => {
-      setList((prevList) =>
-        prevList.map((item) =>
-          item.id === id ? { ...item, complete: !item.complete } : item
-        )
-      );
+      const Change = List.map((item) => 
+            item.id === id ? { ...item, complete: !item.complete } : item )
+      dispatch(setList(Change))
     };
     
     function handleRemoveItem() {
-      setList((prevList) => prevList.filter((List) => List.complete !== true));
+      //setList((prevList) => prevList.filter((List) => List.complete !== true));
     };
   
     function handleRemoveAll() {
-      setList([]);
+      //setList([]);
     };
 
     const handleRemoveX = (id) => {
-      setList((prevList) => prevList.filter((List) => List.id !== id));
+      const updatedRList = List.filter((List) => List.id !== id)
+      dispatch(setList(updatedRList))
       fetch(`http://localhost:3000/api/todos/${id}`, {
           method: 'DELETE',
           headers: {
@@ -163,11 +179,13 @@ function ToDoPage() {
           .then((data) => {
             if(data === undefined){
             } else {
-              console.log('Task created successfully', data);
+              console.log('Task deleted successfully', data);
+              attention.textContent = 'Task deleted successfully'
             }
           })
           .catch((error) => {
             console.error('Error:', error);
+            attention.textContent = 'Error'
           });
     }
     
@@ -179,14 +197,14 @@ function ToDoPage() {
       };
       console.log(form)
       console.log(form.todo)
-      setList((prevList) => {
-        return prevList.map((item) => {
-          if (item.id === id) {
-            return { ...item, ...form };
-          }
-          return item;
-        });
+      
+      const updatedList = List.map((item) => {
+        if (item.id === id) {
+          return { ...item, ...form };
+        }
+        return item;
       });
+      dispatch(setList(updatedList))
     
       fetch(`http://localhost:3000/api/todos/${id}`, {
         method: 'PUT',
@@ -198,7 +216,8 @@ function ToDoPage() {
       })
         .then((response) => {
           if (response.status === 201) {
-            return response.json();
+            response.json();
+            attention.textContent = 'Task updated successfully'
           } else if (response.status === 403) {
             console.error('Log In Expired');
             history(`/login`);
@@ -212,14 +231,70 @@ function ToDoPage() {
         });
     };
 
+    const handleSearch = () => {
+      const key = InputValueSearch;
+      if (key === ''){
+        fetchToDoList()
+      } else {
+        fetch(`http://localhost:3000/user/Search/${key}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+      })
+      .then((response) => {
+        if (response.status === 201) {
+          return response.json();
+        } else if (response.status === 403) {
+          console.error('Log In Expired');
+          history(`/login`);
+        } else {
+          console.error('Failed to create task');
+          throw new Error('Failed to create task');
+        }
+      })
+      .then((data) => {
+        const todoDataRenewal = data[0].todoFilteredData;
+        console.log(data)
+        const newTodoList = [];
+
+        for(var i = 0; i < todoDataRenewal.length; i++){
+          const newTodo = {
+            id: todoDataRenewal[i].id,
+            todo: todoDataRenewal[i].todo,
+            deadline: todoDataRenewal[i].deadline,
+            complete: todoDataRenewal[i].complete,
+          };
+          newTodoList.push(newTodo);
+        }
+        dispatch(setList(newTodoList))
+        attention.textContent = todoDataRenewal.length + ' results'
+      })
+      .catch((error) => {
+        console.error('Error:', error);
+        attention.textContent = 'Error'
+      });
+      }
+      
+    };
+
+    function reset() {
+      fetchToDoList()
+      dispatch(setInputValueSearch(''))
+      attention.textContent = ''
+    }
   return (
     <div className='all'>
       <div className='Title'>To Do List </div>
       <div id='title'></div>
-      <input className='text' ref={todoNameRef} value={InputValue} onChange={setInput} placeholder='To do?' type='text'/>
-      <input className='text' ref={todoDateRef} value={InputValueDate} onChange={setInputDate} type='date'/>
-      <button onClick={handleAddList}>Add List</button>
-      
+      <div id='attention'></div>
+      <input className='text' value={InputValue} onChange={setInput} placeholder='To do?' type='text'/>
+      <input className='text' value={InputValueDate} onChange={setInputDate} type='date'/>
+      <button onClick={handleAddList} style={{marginBottom: '10px'}}>Add List</button>   
+      <input value={InputValueSearch} onChange={setInputSearch} type="text" placeholder="Search.." className="text"/>
+      <div><button onClick={handleSearch} type="submit"><i className="fa fa-search">Search</i></button> 
+      <button onClick={reset} type="submit"><i className="fa fa-search">Reset</i></button></div>
       <br/>
       <ToDoList smth={List} toggleToDo={handleCheckboxChange} toggleDelete={handleRemoveX} toggleUpdate={handleUpdate}/>
       
