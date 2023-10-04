@@ -1,10 +1,15 @@
-import React, { useState } from 'react';
+import React, { useEffect  } from 'react';
+import { useSelector, useDispatch } from 'react-redux'
+import { setInputValues, setInputValuesDate, } from './redux/counterSliceList'
 
 export default function ToDoList({ smth, toggleToDo, toggleDelete, toggleUpdate }) {
-  const [inputValues, setInputValues] = useState(smth.map((item) => item.id));
-  const [inputValuesDate, setInputValuesDate] = useState(smth.map((item) => item.id));
-  const [filteredItems, setFilteredItems] = useState([]);
-  const [filteredItemsCheck, setFilteredItemsCheck] = useState(false);
+
+  let inputValues = ''
+  let inputValuesDate = ''
+
+  inputValues = useSelector((state) => state.counterList.inputValues)
+  inputValuesDate = useSelector((state) => state.counterList.inputValuesDate)
+  const dispatch = useDispatch();
 
   function tester(edited, ori){
     if (edited === undefined) {
@@ -22,79 +27,69 @@ export default function ToDoList({ smth, toggleToDo, toggleDelete, toggleUpdate 
     }
   }
   
-  const handleInputChange = (e, index) => {
+  const checkChange = (id, order) => {
+    const divElement = document.getElementById(`updateTodo_${id}`);
+    switch(order){
+      case 'none':
+        return divElement.style.display = "none";
+      case 'block':
+        return divElement.style.display = "block";
+    }
+  }
+
+  const handleInputChange = (e, index, id) => {
+    const divElement = document.getElementById(`updateTodo_${id}`);
+    divElement.style.display = "block";
     const newInputValues = [...inputValues];
     newInputValues[index] = e.target.value;
-    setInputValues(newInputValues);
+    dispatch(setInputValues(newInputValues))
   };
 
-  const handleInputChangeDate = (e, index) => {
+  const handleInputChangeDate = (e, index, id) => {
+    const divElement = document.getElementById(`updateTodo_${id}`);
+    divElement.style.display = "block";
     const newInputValuesDate = [...inputValuesDate];
     newInputValuesDate[index] = e.target.value;
-    setInputValuesDate(newInputValuesDate);
+    dispatch(setInputValuesDate(newInputValuesDate))
   };
-
-
-  const handleInputChangeSearch = (e) => {
-    const searchQuery = e.target.value.toLowerCase();
-    if (searchQuery === '') {
-      setFilteredItemsCheck(false);
-      setFilteredItems([]); 
-    } else {
-      const filtered = smth.filter((item) =>
-        item.todo.toLowerCase().includes(searchQuery)
-      );
-      if (filtered.length === 0) {
-        setFilteredItemsCheck(true);
-      } else {
-        setFilteredItemsCheck(true);
-      }
-      setFilteredItems(filtered);
-    }
-  };
-  
-  
 
 
   return (
     <ul>
       <div style={{ display: 'flex', justifyContent: 'right', alignItems: 'center' }}>
-      <input style={{width: '130px', borderRadius: '20px'}} type='text' className='text' placeholder='Search...'
-
-      onChange={(e) => {
-        handleInputChangeSearch(e);
-      }}
-      
-      />
       </div>
-      {(filteredItemsCheck === false ? smth : filteredItems).map((item, index) => (
-        <div key={index} className='beta' style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+      {smth.map((item) => (
+        <div key={item.id} className='beta' style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div>
             <input
               className='checkbox'
               type='checkbox'
               checked={item.complete}
-              onChange={() => toggleToDo(item.id)}
+              onChange={() => {
+                toggleToDo(item.id)
+                checkChange(item.id, 'block')
+              }}
             />
             <input
               className='eidt'
-              value={inputValues[index] || item.todo}
-              onChange={(e) => handleInputChange(e, index)}
+              value={inputValues[item.id] === undefined ? item.todo : inputValues[item.id]}
+              onChange={(e) => handleInputChange(e, item.id, item.id)}
               type='text'
             />
             <i> || </i>
             <input className='eidt as' 
             type='date' 
-            value={inputValuesDate[index] || item.deadline}
-            onChange={(e) => handleInputChangeDate(e, index)} 
+            value={inputValuesDate[item.id] || item.deadline}
+            onChange={(e) => handleInputChangeDate(e, item.id, item.id)} 
             />
           </div>
           <button 
-          className='remover' 
-          onClick={() => toggleUpdate(item.id, tester(inputValues[index], item.todo), testerDate(inputValuesDate[index], item.deadline), item.complete)}>
-            Update
+          className='remover' id={`updateTodo_${item.id}`} style={{display: 'none'}}
+          onClick={() => {
+            toggleUpdate(item.id, tester(inputValues[item.id], item.todo), testerDate(inputValuesDate[item.id], item.deadline), item.complete); 
+            checkChange(item.id, 'none')}}> Update
           </button>
-          <button className='remover' onClick={() => toggleDelete(item.id)}>x</button>
+          <button className='remover' onClick={() => toggleDelete(item.id)}>Delete</button>
         </div>
       ))}
     </ul>
